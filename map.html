@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Map</title>
+  </head>
+  <body>
+    {{range .Results}}
+    <section>
+        <div>
+            <br>
+            <h2>{{.LatLng.Lat}}{{.LatLng.Lng}}</h2>
+        </div>
+    </section>
+    {{end}}
+  </body>
+</html>

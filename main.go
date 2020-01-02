@@ -3,71 +3,71 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"strings"
-	"text/template"
 )
 
-type Location struct {
-	Street             string
-	AdminArea6         string
-	AdminArea6Type     string
-	AdminArea5         string
-	AdminArea5Type     string
-	AdminArea4         string
-	AdminArea4Type     string
-	AdminArea3         string
-	AdminArea3Type     string
-	AdminArea1         string
-	AdminArea1Type     string
-	PostalCode         string
-	GeocodeQualityCode string
-	GeocodeQuality     string
-	DragPoint          bool
-	SideOfStreet       string
-	LinkID             string
-	UnknownInput       string
-	Type               string
-	LatLng             LatLng
-	DisplayLatLn       DisplayLatLn
-	MapURL             string
-}
-type DisplayLatLn struct {
-	Lat int
-	Lng int
-}
-type LatLng struct {
-	Lat int
-	Lng int
+type Map struct {
+	Info    Info      `json:"info"`
+	Options Options   `json:"options"`
+	Results []Results `json:"results"`
 }
 type Info struct {
-	Statuscode int
-	Copyright  Copyright
-	Messages   []string
+	Statuscode int       `json:"statuscode"`
+	Copyright  Copyright `json:"copyright"`
+	Messages   []string  `json:"messages"`
 }
 type Copyright struct {
-	Text         string
-	ImageURL     string
-	ImageAltText string
+	Text         string `json:"text"`
+	ImageURL     string `json:"imageUrl"`
+	ImageAltText string `json:"imageAltText"`
 }
 type Options struct {
-	MaxResults        int
-	ThumbMaps         bool
-	IgnoreLatLngInput bool
-}
-type ProvidedLocation struct {
-	Location string
+	MaxResults        int  `json:"maxResults"`
+	ThumbMaps         bool `json:"thumbMaps"`
+	IgnoreLatLngInput bool `json:"ignoreLatLngInput"`
 }
 type Results struct {
-	ProvidedLocation ProvidedLocation
-	Locations        []Location
+	ProvidedLocation ProvidedLocation `json:"providedLocation"`
+	Locations        []Location       `json:"locations"`
 }
-type Map struct {
-	Info    Info
-	Options Options
-	Results []Results
+type ProvidedLocation struct {
+	Location string `json:"location"`
+}
+type Location struct {
+	Street             string       `json:"street"`
+	AdminArea6         string       `json:"adminArea6"`
+	AdminArea6Type     string       `json:"adminArea6Type"`
+	AdminArea5         string       `json:"adminArea5"`
+	AdminArea5Type     string       `json:"adminArea5Type"`
+	AdminArea4         string       `json:"adminArea4"`
+	AdminArea4Type     string       `json:"adminArea4Type"`
+	AdminArea3         string       `json:"adminArea3"`
+	AdminArea3Type     string       `json:"adminArea3Type"`
+	AdminArea1         string       `json:"adminArea1"`
+	AdminArea1Type     string       `json:"adminArea1Type"`
+	PostalCode         string       `json:"postalCode"`
+	GeocodeQualityCode string       `json:"geocodeQualityCode"`
+	GeocodeQuality     string       `json:"geocodeQuality"`
+	DragPoint          bool         `json:"dragPoint"`
+	SideOfStreet       string       `json:"sideOfStreet"`
+	LinkID             string       `json:"linkId"`
+	UnknownInput       string       `json:"unknownInput"`
+	Type               string       `json:"type"`
+	LatLng             LatLng       `json:"latLng"`
+	DisplayLatLn       DisplayLatLn `json:"displayLatLng"`
+	MapURL             string       `json:"mapUrl"`
+}
+type DisplayLatLn struct {
+	Lat float64 `json:"lat"`
+	Lng float64 `json:"lng"`
+}
+type LatLng struct {
+	Lat float64 `json:"lat"`
+	Lng float64 `json:"lng"`
 }
 
 func convert(location string) string {
@@ -87,7 +87,25 @@ func main() {
 	log.Fatal(http.ListenAndServe(port, nil))
 }
 
-var save Map
+func setStruct(converted string, tr chan Map) {
+	result := "http://open.mapquestapi.com/geocoding/v1/address?key=" + "6ZAjU5GDUjzJIaU1aMsMEf19AlG4hNCx&location=" + converted
+	response, err := http.Get(result)
+	if err != nil {
+		log.Panic(err)
+	}
+	data, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		log.Panic(err)
+	}
+	save := Map{}
+	err = json.Unmarshal(data, &save)
+	if err != nil {
+		log.Fatal(err)
+	}
+	tr <- save
+}
+
+var mapp Map
 
 //http://open.mapquestapi.com/geocoding/v1/address=/R.+da+Mouraria+3,+9000-047+Funchal
 // ipa for google maps :)
@@ -96,24 +114,16 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
-	if err := templates.Execute(w, save); err != nil {
+	if err := templates.Execute(w, ""); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 	converted := convert(r.FormValue("str"))
+	tr := make(chan Map)
 	if converted != "" {
-		result := "http://open.mapquestapi.com/geocoding/v1/address?key=" + "6ZAjU5GDUjzJIaU1aMsMEf19AlG4hNCx&location=" + converted
-		fmt.Println(result)
-		response, err := http.Get(result)
-		if err != nil {
-			log.Panic(err)
-		}
-		data, err := ioutil.ReadAll(response.Body)
-		if err != nil {
-			log.Panic(err)
-		}
+		go setStruct(converted, tr)
 
-		json.Unmarshal(data, &save)
-		fmt.Println(save)
+		mapp = <-tr
+		fmt.Println(mapp)
 	}
 }
 
@@ -122,7 +132,12 @@ func getmap(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
-	if err := templates.Execute(w, save); err != nil {
+	if err := templates.Execute(w, mapp.Results[0].Locations[0]); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+	// initialize the map on the "map" div with a given center and zoom
+	var searchMap := L.map("searchMap", {
+		center: [mapp.Results[0].Locations[0].LatLng.Lat,mapp.Results[0].Locations[0].LatLng.Lng],
+		zoom: 13
 	}
 }

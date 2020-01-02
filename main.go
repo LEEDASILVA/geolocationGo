@@ -135,9 +135,5 @@ func getmap(w http.ResponseWriter, r *http.Request) {
 	if err := templates.Execute(w, mapp.Results[0].Locations[0]); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
-	// initialize the map on the "map" div with a given center and zoom
-	var searchMap := L.map("searchMap", {
-		center: [mapp.Results[0].Locations[0].LatLng.Lat,mapp.Results[0].Locations[0].LatLng.Lng],
-		zoom: 13
-	}
+
 }

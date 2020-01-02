@@ -135,5 +135,5 @@ func getmap(w http.ResponseWriter, r *http.Request) {
 	if err := templates.Execute(w, mapp.Results[0].Locations[0]); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
-
+	fmt.Println(mapp.Results[0].Locations[0].LatLng.Lat, mapp.Results[0].Locations[0].LatLng.Lng)
 }

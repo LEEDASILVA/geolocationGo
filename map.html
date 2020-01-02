@@ -3,13 +3,32 @@
   <head>
     <meta charset="utf-8">
     <title>Map</title>
-  </head>
-  <body>
+    <script src="https://api.mqcdn.com/sdk/mapquest-js/v1.3.2/mapquest.js"></script>
+    <link type="text/css" rel="stylesheet" href="https://api.mqcdn.com/sdk/mapquest-js/v1.3.2/mapquest.css"/>
     <section>
         <div>
-            <br>
-            <h3>LATITUDE : {{.LatLng.Lat}} LONGITUDE : {{.LatLng.Lng}}</h3>
+          <h3 class="lat">LATITUDE : {{.LatLng.Lat}}</h3>
+          <h3 class="lng">LATITUDE : {{.LatLng.Lng}}</h3>
         </div>
     </section>
+    <script type="text/javascript">
+      window.onload = function() {
+        L.mapquest.key = '6ZAjU5GDUjzJIaU1aMsMEf19AlG4hNCx';
+        let lat = document.querySelector(".lat").textContent;
+        let lng = document.querySelector(".lng").textContent;
+        let a = parseFloat(lat)
+        let b = parseFloat(lng)
+        var map = L.mapquest.map('map', {
+        center: [a, b],
+        layers: L.mapquest.tileLayer('map'),
+        zoom: 12
+      });
+
+        map.addControl(L.mapquest.control());
+      }
+    </script>
+  </head>
+      <body style="border: 0; margin: 0;">
+      <div id="map" style="width: 100%; height: 530px;"></div>
   </body>
 </html>

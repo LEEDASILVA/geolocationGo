@@ -11,19 +11,8 @@ import (
 )
 
 type Map struct {
-	Info    Info      `json:"info"`
 	Options Options   `json:"options"`
 	Results []Results `json:"results"`
-}
-type Info struct {
-	Statuscode int       `json:"statuscode"`
-	Copyright  Copyright `json:"copyright"`
-	Messages   []string  `json:"messages"`
-}
-type Copyright struct {
-	Text         string `json:"text"`
-	ImageURL     string `json:"imageUrl"`
-	ImageAltText string `json:"imageAltText"`
 }
 type Options struct {
 	MaxResults        int  `json:"maxResults"`
@@ -108,7 +97,7 @@ func setStruct(converted string, tr chan Map) {
 var mapp Map
 
 //http://open.mapquestapi.com/geocoding/v1/address=/R.+da+Mouraria+3,+9000-047+Funchal
-// ipa for google maps :)
+// free ipa not the best but it will do the job :)
 func handler(w http.ResponseWriter, r *http.Request) {
 	templates, err := template.ParseFiles("index.html")
 	if err != nil {
